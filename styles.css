@@ -222,7 +222,7 @@ main {
     margin-top: 20px;
 }
 
-#whitepaper-btn, #dashboard-btn {
+#whitepaper-btn, #dashboard-btn, #use-web-btn-home {
     width: 250px;
     padding: 12px 30px;
     border-radius: 30px;
@@ -230,28 +230,71 @@ main {
     cursor: pointer;
     font-weight: bold;
     transition: all 0.3s;
-    border: none;
+    border: 2px solid transparent;
     color: white;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 2px;
 }
 
 #whitepaper-btn {
     background: linear-gradient(45deg, var(--spider-purple), #4a00e0);
+    border-color: var(--spider-purple);
 }
 
 #dashboard-btn {
     background: var(--spider-red);
+    border-color: var(--spider-red);
+}
+
+#use-web-btn-home {
+    background: linear-gradient(45deg, #ff0040, #ff6b00, #ff0040);
+    background-size: 200% 200%;
+    border-color: #ff0040;
+    animation: gradient-shift 2s ease-in-out infinite, pulse-glow 1.5s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(255, 0, 64, 0.5);
 }
 
 #whitepaper-btn:hover {
     background: linear-gradient(45deg, #4a00e0, var(--spider-purple));
-    transform: translateY(-3px);
+    transform: translateY(-3px) scale(1.05);
     box-shadow: 0 5px 15px rgba(74, 0, 224, 0.4);
+    border-color: #4a00e0;
 }
 
 #dashboard-btn:hover {
     background: var(--spider-purple);
-    transform: translateY(-3px);
+    transform: translateY(-3px) scale(1.05);
     box-shadow: 0 5px 15px rgba(209, 0, 0, 0.4);
+    border-color: var(--spider-purple);
+}
+
+#use-web-btn-home:hover {
+    transform: translateY(-5px) scale(1.1);
+    box-shadow: 0 10px 30px rgba(255, 0, 64, 0.8);
+    animation: gradient-shift 0.5s ease-in-out infinite, pulse-glow 0.3s ease-in-out infinite, glitch-intense 0.1s ease-in-out infinite;
+}
+
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes pulse-glow {
+    0% { box-shadow: 0 0 20px rgba(255, 0, 64, 0.5); }
+    50% { box-shadow: 0 0 40px rgba(255, 0, 64, 0.8), 0 0 60px rgba(255, 107, 0, 0.3); }
+    100% { box-shadow: 0 0 20px rgba(255, 0, 64, 0.5); }
+}
+
+@keyframes glitch-intense {
+    0% { transform: translateY(-5px) scale(1.1) translate(0); }
+    20% { transform: translateY(-5px) scale(1.1) translate(-2px, 1px); }
+    40% { transform: translateY(-5px) scale(1.1) translate(2px, -1px); }
+    60% { transform: translateY(-5px) scale(1.1) translate(-1px, 2px); }
+    80% { transform: translateY(-5px) scale(1.1) translate(1px, -2px); }
+    100% { transform: translateY(-5px) scale(1.1) translate(0); }
 }
 
 /* Dashboard Styles */
@@ -358,19 +401,54 @@ main {
 .spider-btn {
     background: linear-gradient(45deg, var(--spider-purple), var(--spider-red));
     color: white;
-    border: none;
+    border: 2px solid transparent;
     padding: 12px 25px;
     border-radius: 30px;
     cursor: pointer;
     font-weight: bold;
     transition: all 0.3s;
     display: inline-block;
-    margin-top: 20px;
+    margin: 10px;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .spider-btn:hover {
-    transform: translateY(-3px);
+    transform: translateY(-3px) scale(1.05);
     box-shadow: 0 5px 15px rgba(209, 0, 0, 0.4);
+}
+
+/* Special effects for USE WEB button */
+#use-web-btn {
+    background: linear-gradient(45deg, #ff0040, #ff6b00, #ff0040);
+    background-size: 200% 200%;
+    border-color: #ff0040;
+    animation: gradient-shift 2s ease-in-out infinite, pulse-glow 1.5s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(255, 0, 64, 0.5);
+}
+
+#use-web-btn:hover {
+    transform: translateY(-5px) scale(1.1);
+    box-shadow: 0 10px 30px rgba(255, 0, 64, 0.8);
+    animation: gradient-shift 0.5s ease-in-out infinite, pulse-glow 0.3s ease-in-out infinite, glitch-intense 0.1s ease-in-out infinite;
+}
+
+/* Enhanced glitch effects for all spider buttons */
+.spider-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+}
+
+.spider-btn:hover::before {
+    left: 100%;
 }
 
 /* Enhanced spinner */

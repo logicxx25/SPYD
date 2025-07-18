@@ -440,6 +440,22 @@ if (whitepaperBtn) {
         logoutBtnDashboard.addEventListener('click', logoutWallet);
     }
     
+    // Add event listener for the USE WEB button (dashboard)
+    const useWebBtn = document.getElementById('use-web-btn');
+    if (useWebBtn) {
+        useWebBtn.addEventListener('click', () => {
+            window.location.href = 'webtrap.html';
+        });
+    }
+    
+    // Add event listener for the USE WEB button (home page)
+    const useWebBtnHome = document.getElementById('use-web-btn-home');
+    if (useWebBtnHome) {
+        useWebBtnHome.addEventListener('click', () => {
+            window.location.href = 'webtrap.html';
+        });
+    }
+    
     // Initialize wallet menu
     initWalletMenu();
     
