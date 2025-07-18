@@ -1,4 +1,4 @@
-# SpiderCoin - Cardano Meme Cryptocurrency
+# SPYD Coin - Trap scammers in your web
 
 ## Setup Instructions
 

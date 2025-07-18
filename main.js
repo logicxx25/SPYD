@@ -102,7 +102,7 @@ function waitForConfig() {
     });
 }
 
-// SpiderCoin asset ID (replace with your actual asset ID)
+// SPYD Coin asset ID (replace with your actual asset ID)
 const ASSET_ID = "e1e47522d8f3906a958581817ca790e4cf492588eed81733d91b14e542697262";
     
     let connectedWallet = null;
@@ -352,7 +352,7 @@ function logoutWallet() {
                 assetItem.innerHTML = `
                     <div class="asset-icon">🕷️</div>
                     <div class="asset-info">
-                        <h4>SpiderCoin (SPDR)</h4>
+                            <h4>SPYD Coin (SPDR)</h4>
                         <p>Amount: ${targetAsset.quantity}</p>
                         <p>Asset ID: ${targetAsset.unit}</p>
                     </div>
