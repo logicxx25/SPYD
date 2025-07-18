@@ -130,64 +130,29 @@ window.PARALLEL_FETCH = {
     }
 };
 
-// Function to load configuration from .env file (async)
-async function loadConfigFromEnv() {
-    try {
-        const response = await fetch('./.env');
-        if (response.ok) {
-            const envContent = await response.text();
-            const lines = envContent.split('\n');
-            const apiKeys = [];
-            
-            lines.forEach(line => {
-                const [key, value] = line.split('=');
-                if (key && value) {
-                    const cleanKey = key.trim();
-                    const cleanValue = value.trim();
-                    
-                    // Load multiple API keys
-                    if (cleanKey.startsWith('BLOCKFROST_API_KEY_') && cleanValue) {
-                        apiKeys.push(cleanValue);
-                    }
-                    
-                    // Legacy single key support
-                    if (cleanKey === 'BLOCKFROST_API_KEY' && cleanValue) {
-                        window.APP_CONFIG.BLOCKFROST_API_KEY = cleanValue;
-                    }
-                }
-            });
-            
-            // Initialize API key manager
-            if (apiKeys.length > 0) {
-                window.APP_CONFIG.BLOCKFROST_API_KEYS = apiKeys;
-                window.API_KEY_MANAGER.initializeKeys(apiKeys);
-                console.log(`Loaded ${apiKeys.length} API keys from .env file`);
-            } else {
-                // Fallback to single key if no multiple keys found
-                if (window.APP_CONFIG.BLOCKFROST_API_KEY) {
-                    window.API_KEY_MANAGER.initializeKeys([window.APP_CONFIG.BLOCKFROST_API_KEY]);
-                }
-            }
-        }
-    } catch (error) {
-        console.warn('Could not load .env file, using fallback configuration');
-        // Fallback to hardcoded keys if .env fails
-        const fallbackKeys = [
-            'mainnetXXzealBK3I6LNdPvzmFZ5PUqJL0L9vp0',
-            'mainnetExfubYtwlbbd2GOnZr7SAzvtSZatUxSq',
-            'mainnetweguh0mB2J3KwDoadUyW2nFEPn4yd8au',
-            'mainnetD6AWzlBZ47svjG5zxBEqzhLlC3Awq1Ik',
-            'mainnetfqafERNeqtPg5kKvQDZMomvpmlwhlOsX',
-            'mainnetVK4pgPC2mtTumFcqMSEGiDhZJQzwTl0W',
-            'mainnetQcqIDWbkVkqzhPKhAeCyeruYJbnHgKLc',
-            'mainnetvjYI2rsQK0AoLOIcy5OulXHczrQRIiOQ',
-            'mainnetuYKN47riu6BHUS7IdSWdbHAwHQmwUhnT',
-            'mainnetKakwoRkyCFmBI2vwHv2K7z6vNkDD4lR4'
-        ];
-        window.API_KEY_MANAGER.initializeKeys(fallbackKeys);
-        window.APP_CONFIG.BLOCKFROST_API_KEYS = fallbackKeys;
-    }
+// Function to initialize configuration with API keys
+function initializeConfig() {
+    // Use the API keys directly from the configuration
+    const apiKeys = [
+        'mainnetXXzealBK3I6LNdPvzmFZ5PUqJL0L9vp0',
+        'mainnetExfubYtwlbbd2GOnZr7SAzvtSZatUxSq',
+        'mainnetweguh0mB2J3KwDoadUyW2nFEPn4yd8au',
+        'mainnetD6AWzlBZ47svjG5zxBEqzhLlC3Awq1Ik',
+        'mainnetfqafERNeqtPg5kKvQDZMomvpmlwhlOsX',
+        'mainnetVK4pgPC2mtTumFcqMSEGiDhZJQzwTl0W',
+        'mainnetQcqIDWbkVkqzhPKhAeCyeruYJbnHgKLc',
+        'mainnetvjYI2rsQK0AoLOIcy5OulXHczrQRIiOQ',
+        'mainnetuYKN47riu6BHUS7IdSWdbHAwHQmwUhnT',
+        'mainnetKakwoRkyCFmBI2vwHv2K7z6vNkDD4lR4'
+    ];
+    
+    // Initialize API key manager
+    window.APP_CONFIG.BLOCKFROST_API_KEYS = apiKeys;
+    window.APP_CONFIG.BLOCKFROST_API_KEY = apiKeys[0]; // Set first key as legacy fallback
+    window.API_KEY_MANAGER.initializeKeys(apiKeys);
+    
+    console.log(`Initialized ${apiKeys.length} API keys for parallel fetching`);
 }
 
-// Load from .env file asynchronously
-loadConfigFromEnv();
+// Initialize configuration immediately
+initializeConfig();
