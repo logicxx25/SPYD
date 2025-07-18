@@ -14,22 +14,7 @@ function hideModal() {
     document.getElementById('alert-modal').style.display = 'none';
 }
 
-document.addEventListener('DOMContentLoaded', async function() {
-    // Wait for configuration to load
-    try {
-        BLOCKFROST_API_KEY = await waitForConfig();
-        
-        // Validate API key format
-        if (!BLOCKFROST_API_KEY || BLOCKFROST_API_KEY.length < 20) {
-            showModal('Configuration Error', 'Invalid Blockfrost API key. Please set your API key in localStorage or .env file');
-            console.error('Invalid Blockfrost API key configuration');
-            return;
-        }
-    } catch (error) {
-        console.error('Failed to load configuration:', error);
-        return;
-    }
-
+document.addEventListener('DOMContentLoaded', function() {
     // Set up modal event listeners only if elements exist
     const closeBtn = document.querySelector('.close-btn');
     const confirmBtn = document.getElementById('modal-confirm-btn');
