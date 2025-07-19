@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" href="images/logo.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPYD Coin - Trap scammers in your web</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="three-web.js"></script>
+    <script src="config.js"></script>
+    <script src="main.js" type="module"></script>
+</head>
+<body>
+    <div id="cobweb-container"></div>
+    <div class="glitch-overlay"></div>
+<header>
+<a href="index.html" class="logo-link">
+  <img src="images/logo.png" alt="SPYD Coin" class="logo glitch">
+</a>
+    <div id="wallet-info">
+    </div>
+    <div id="wallet-connect">
+        <button id="connect-btn" class="glitch-btn">Connect Wallet</button>
+        <div id="wallet-menu" class="hidden">
+            <!-- Wallet options injected by JS -->
+        </div>
+    </div>
+</header>
+    
+    <main>
+<section class="hero">
+    <h2 class="glitch-text" data-text="The Webbing Crypto Revolution">The Webbing Crypto Revolution</h2>
+    <p class="glitch-subtext">SPYD Coin — Trap scammers in your web.</p>
+    <div class="main-menu-buttons">
+        <button id="whitepaper-btn" class="glitch-btn" data-text="Whitepaper">Whitepaper</button>
+        <button id="dashboard-btn" class="glitch-btn" data-text="View Your Assets">View Your Assets</button>
+        <button id="use-web-btn-home" class="glitch-btn" data-text="USE WEB">USE WEB</button>
+    </div>
+</section>
+    </main>
+
+<footer>
+    <p class="glitch-subtext">Powered by Cardano Blockchain</p>
+</footer>
+
+<!-- Modal for Alerts -->
+<div id="alert-modal" class="modal glitch-modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h3 id="modal-title" class="glitch-text">Alert</h3>
+        <p id="modal-message" class="glitch-subtext"></p>
+        <button id="modal-confirm-btn" class="glitch-btn">OK</button>
+    </div>
+</div>
+</body>
+</html>

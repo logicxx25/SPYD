@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" href="images/logo.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPYD Coin - NFT Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="three-web.js"></script>
+    <script src="config.js"></script>
+    <script src="main.js" type="module"></script>
+</head>
+<body>
+    <div id="cobweb-container"></div>
+    <div class="glitch-overlay"></div>
+    <header>
+        <a href="index.html" class="logo-link">
+            <img src="images/logo.png" alt="SPYD Coin" class="logo glitch">
+        </a>
+        <div id="wallet-connect">
+            <button id="connect-btn" class="glitch-btn">Connect Wallet</button>
+            <div id="wallet-menu" class="hidden">
+                <!-- Wallet options injected by JS -->
+            </div>
+        </div>
+    </header>
+    
+    <main>
+        <section class="dashboard">
+            <h2 class="glitch-text" data-text="Your NFT Collection">Your NFT Collection</h2>
+            <div id="wallet-info">
+                <p id="wallet-address" class="glitch-subtext">Not connected</p>
+            </div>
+            
+            <!-- NFT Eligibility Check -->
+            <div class="eligibility-container">
+                <h3 class="glitch-text" data-text="NFT Presale Eligibility">NFT Presale Eligibility</h3>
+                <div id="eligibility-status" class="eligibility-status">
+                    <span class="status-badge glitch-badge">Checking...</span>
+                </div>
+                <p id="eligibility-message" class="glitch-subtext">Checking your NFT holdings for presale eligibility...</p>
+            </div>
+            
+            <div class="nft-container">
+                <div class="wallet-header">
+                    <h3 class="glitch-text" data-text="NFT Collection">NFT Collection</h3>
+                    <div class="wallet-status">
+                        <span class="status-indicator"></span>
+                        <span id="connection-status" class="glitch-subtext">Disconnected</span>
+                    </div>
+                </div>
+                
+                <div class="nft-display">
+                    <!-- NFTs will be loaded here -->
+                </div>
+            </div>
+            
+            <button id="use-web-btn" class="spider-btn glitch-btn" data-text="USE WEB">USE WEB</button>
+            <button id="back-btn" class="spider-btn glitch-btn" data-text="Back to Home">Back to Home</button>
+            <button id="logout-btn" class="spider-btn glitch-btn" data-text="Logout">Logout</button>
+        </section>
+    </main>
+
+    <footer>
+        <p class="glitch-subtext">Powered by Cardano Blockchain</p>
+    </footer>
+
+    <!-- Modal for Alerts -->
+    <div id="alert-modal" class="modal glitch-modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h3 id="modal-title" class="glitch-text">Alert</h3>
+            <p id="modal-message" class="glitch-subtext"></p>
+            <button id="modal-confirm-btn" class="glitch-btn">OK</button>
+        </div>
+    </div>
+</body>
+</html>

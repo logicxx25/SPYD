@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" href="images/logo.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPYD Coin - Web Trap</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="webtrap.css">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="three-web.js"></script>
+    <script src="config.js"></script>
+    <script src="main.js" type="module"></script>
+</head>
+<body>
+    <div id="cobweb-container"></div>
+    <div class="glitch-overlay"></div>
+    <header>
+        <a href="index.html" class="logo-link">
+            <img src="images/logo.png" alt="SPYD Coin" class="logo glitch">
+        </a>
+        <div id="wallet-connect">
+            <button id="connect-btn" class="glitch-btn">Connect Wallet</button>
+            <div id="wallet-menu" class="hidden">
+                <!-- Wallet options injected by JS -->
+            </div>
+        </div>
+    </header>
+    
+    <main>
+        <section class="webtrap">
+            <h2 class="glitch-text" data-text="WEB TRAP">WEB TRAP</h2>
+            <p class="glitch-subtext">Discover the Top 10 Holders of any Cardano Native Token</p>
+            
+            <div class="trap-container">
+                <div class="policy-input-section">
+                    <h3 class="glitch-text" data-text="Token Analysis">Token Analysis</h3>
+                    <div class="input-group">
+                        <label for="policy-id" class="glitch-subtext">Policy ID:</label>
+                        <input 
+                            type="text" 
+                            id="policy-id" 
+                            placeholder="Enter Policy ID (56 chars) or Asset ID (56+ chars)" 
+                            class="glitch-input"
+                            maxlength="120"
+                        >
+                        <button id="analyze-btn" class="glitch-btn">Analyze Token</button>
+                    </div>
+                    <div class="input-help">
+                        <p class="glitch-subtext">Enter either a 56-character Policy ID or a full Asset ID (Policy ID + Asset Name) to analyze token holders.</p>
+                    </div>
+                </div>
+                
+                <div id="loading-section" class="loading-section hidden">
+                    <div class="spinner"></div>
+                    <p class="glitch-subtext">Analyzing token holders...</p>
+                </div>
+                
+                <div id="results-section" class="results-section hidden">
+                    <h3 class="glitch-text" data-text="Spider Web Analysis">Spider Web Analysis</h3>
+                    <div id="token-info" class="token-info">
+                        <!-- Token information will be displayed here -->
+                    </div>
+                    <div id="spider-web-container" class="spider-web-container">
+                        <div id="web-center" class="web-center">
+                            <div class="policy-id-display"></div>
+                        </div>
+                        <div id="web-strings" class="web-strings">
+                            <!-- Web strings and holders will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="error-section" class="error-section hidden">
+                    <div class="error-icon">⚠️</div>
+                    <h3 class="glitch-text error-text">Analysis Failed</h3>
+                    <p id="error-message" class="glitch-subtext"></p>
+                    <button id="retry-btn" class="glitch-btn">Try Again</button>
+                </div>
+            </div>
+            
+            <button id="back-to-dashboard-btn" class="spider-btn glitch-btn">Back to Dashboard</button>
+        </section>
+    </main>
+
+    <footer>
+        <p class="glitch-subtext">Powered by Cardano Blockchain </p>
+    </footer>
+
+    <!-- Modal for Alerts -->
+    <div id="alert-modal" class="modal glitch-modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h3 id="modal-title" class="glitch-text">Alert</h3>
+            <p id="modal-message" class="glitch-subtext"></p>
+            <button id="modal-confirm-btn" class="glitch-btn">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // Web Trap specific functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const policyIdInput = document.getElementById('policy-id');
+            const analyzeBtn = document.getElementById('analyze-btn');
+            const loadingSection = document.getElementById('loading-section');
+            const resultsSection = document.getElementById('results-section');
+            const errorSection = document.getElementById('error-section');
+            const tokenInfo = document.getElementById('token-info');
+            const holdersList = document.getElementById('holders-list');
+            const errorMessage = document.getElementById('error-message');
+            const retryBtn = document.getElementById('retry-btn');
+            const backToDashboardBtn = document.getElementById('back-to-dashboard-btn');
+
+            // Wait for config and API keys to load
+            function waitForConfig() {
+                return new Promise((resolve) => {
+                    const checkConfig = () => {
+                        if (window.API_KEY_MANAGER && window.API_KEY_MANAGER.keys.length > 0) {
+                            resolve(true);
+                        } else {
+                            setTimeout(checkConfig, 100);
+                        }
+                    };
+                    checkConfig();
+                });
+            }
+
+            // Initialize API keys
+            waitForConfig();
+
+            // Show modal function
+            function showModal(title, message) {
+                const modal = document.getElementById('alert-modal');
+                const modalTitle = document.getElementById('modal-title');
+                const modalMessage = document.getElementById('modal-message');
+                const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+                const closeBtn = modal.querySelector('.close-btn');
+
+                modalTitle.textContent = title;
+                modalMessage.textContent = message;
+                modal.style.display = 'block';
+
+                // Close modal handlers
+                const closeModal = () => {
+                    modal.style.display = 'none';
+                };
+
+                modalConfirmBtn.onclick = closeModal;
+                closeBtn.onclick = closeModal;
+                
+                // Close on outside click
+                window.onclick = (event) => {
+                    if (event.target === modal) {
+                        closeModal();
+                    }
+                };
+            }
+
+            // Validate Policy ID or Asset ID format
+            function isValidInput(input) {
+                // Policy ID: exactly 56 hex characters
+                // Asset ID: 56+ hex characters (Policy ID + Asset Name)
+                return /^[a-fA-F0-9]{56,}$/.test(input);
+            }
+
+            // Check if input is a Policy ID (56 chars) or Asset ID (56+ chars)
+            function isPolicyId(input) {
+                return input.length === 56;
+            }
+
+            // Show section
+            function showSection(section) {
+                [loadingSection, resultsSection, errorSection].forEach(s => s.classList.add('hidden'));
+                section.classList.remove('hidden');
+            }
+
+            // Format address for display
+            function formatAddress(address) {
+                // Check for SNEK.FUN bonding curve address
+                if (address === 'addr1xxg94wrfjcdsjncmsxtj0r87zk69e0jfl28n934sznu95tdj764lvrxdayh2ux30fl0ktuh27csgmpevdu89jlxppvrs2993lw') {
+                    return 'SNEK BONDING';
+                }
+                
+                // Check for SNEK.FUN vesting wallet address
+                if (address === 'addr1zyupekdkyr8f6lrnm4zulcs8juwv080hjfgsqvgkp98kkdkrxp0e2m4utglc7hmzkuta3e2td72cdjq9m9xlfn6rz8vq86l65l') {
+                    return 'SNEK VESTING';
+                }
+                
+                if (address.length > 15) {
+                    return `${address.substring(0, 6)}...${address.substring(address.length - 6)}`;
+                }
+                return address;
+            }
+
+            // Check if address is SNEK.FUN bonding curve
+            function isSnekFunBondingCurve(address) {
+                return address === 'addr1xxg94wrfjcdsjncmsxtj0r87zk69e0jfl28n934sznu95tdj764lvrxdayh2ux30fl0ktuh27csgmpevdu89jlxppvrs2993lw';
+            }
+
+            // Check if address is SNEK.FUN vesting wallet
+            function isSnekFunVestingWallet(address) {
+                return address === 'addr1zyupekdkyr8f6lrnm4zulcs8juwv080hjfgsqvgkp98kkdkrxp0e2m4utglc7hmzkuta3e2td72cdjq9m9xlfn6rz8vq86l65l';
+            }
+
+            // Format token amount
+            function formatTokenAmount(amount, decimals = 0) {
+                if (!amount || amount === 'N/A' || amount === null || amount === undefined) {
+                    return 'N/A';
+                }
+                const num = parseInt(amount);
+                if (isNaN(num)) {
+                    return 'N/A';
+                }
+                if (decimals > 0) {
+                    return (num / Math.pow(10, decimals)).toLocaleString();
+                }
+                return num.toLocaleString();
+            }
+
+            // Analyze token holders
+            async function analyzeToken() {
+                const input = policyIdInput.value.trim();
+                
+                if (!input) {
+                    showModal('Invalid Input', 'Please enter a Policy ID or Asset ID');
+                    return;
+                }
+
+                if (!isValidInput(input)) {
+                    showModal('Invalid Input', 'Input must be at least 56 hexadecimal characters (Policy ID or Asset ID)');
+                    return;
+                }
+
+                if (!window.API_KEY_MANAGER || window.API_KEY_MANAGER.keys.length === 0) {
+                    showModal('Configuration Error', 'Blockfrost API keys not loaded. Please try again.');
+                    return;
+                }
+
+                showSection(loadingSection);
+
+                try {
+                    let assetDetail;
+                    let totalAssets = 1;
+
+                    if (isPolicyId(input)) {
+                        // Handle Policy ID - get all assets under this policy using parallel fetch
+                        const assets = await window.PARALLEL_FETCH.makeRequest(
+                            `https://cardano-mainnet.blockfrost.io/api/v0/assets/policy/${input}`
+                        );
+                        
+                        if (!assets || assets.length === 0) {
+                            throw new Error('No tokens found for this Policy ID');
+                        }
+
+                        totalAssets = assets.length;
+
+                        // Get detailed information for the first asset using parallel fetch
+                        const firstAsset = assets[0];
+                        assetDetail = await window.PARALLEL_FETCH.makeRequest(
+                            `https://cardano-mainnet.blockfrost.io/api/v0/assets/${firstAsset.asset}`
+                        );
+                    } else {
+                        // Handle Asset ID - get specific asset details using parallel fetch
+                        assetDetail = await window.PARALLEL_FETCH.makeRequest(
+                            `https://cardano-mainnet.blockfrost.io/api/v0/assets/${input}`
+                        );
+                    }
+
+                    // Get addresses holding this asset using parallel fetch
+                    const targetAsset = isPolicyId(input) ? assetDetail.asset : input;
+                    const addresses = await window.PARALLEL_FETCH.makeRequest(
+                        `https://cardano-mainnet.blockfrost.io/api/v0/assets/${targetAsset}/addresses?count=100&order=desc`
+                    );
+
+                    // Sort by quantity and take top 10
+                    const topHolders = addresses
+                        .sort((a, b) => parseInt(b.quantity) - parseInt(a.quantity))
+                        .slice(0, 10);
+
+                    // Display results
+                    displayResults(assetDetail, topHolders, totalAssets);
+
+                } catch (error) {
+                    console.error('Error analyzing token:', error);
+                    errorMessage.textContent = error.message;
+                    showSection(errorSection);
+                }
+            }
+
+            // Hex to UTF-8 conversion for browser
+            function hexToUtf8(hex) {
+                try {
+                    let str = '';
+                    for (let i = 0; i < hex.length; i += 2) {
+                        const hexPair = hex.substr(i, 2);
+                        const charCode = parseInt(hexPair, 16);
+                        if (charCode > 0) {
+                            str += String.fromCharCode(charCode);
+                        }
+                    }
+                    return str || 'Unknown Token';
+                } catch (e) {
+                    return 'Unknown Token';
+                }
+            }
+
+            // Display analysis results
+            function displayResults(assetDetail, topHolders, totalAssets) {
+                // Display token information
+                const assetName = assetDetail.asset_name ? 
+                    hexToUtf8(assetDetail.asset_name) : 
+                    'Unknown Token';
+
+                tokenInfo.innerHTML = `
+                    <div class="token-card">
+                        <h4 class="glitch-text">${assetName}</h4>
+                        <div class="token-details">
+                            <p><strong>Policy ID:</strong> ${assetDetail.policy_id}</p>
+                            <p><strong>Total Supply:</strong> ${formatTokenAmount(assetDetail.quantity || 'N/A')}</p>
+                            <p><strong>Assets in Policy:</strong> ${totalAssets}</p>
+                        </div>
+                    </div>
+                `;
+
+                // Create spider web visualization
+                createSpiderWeb(assetDetail, topHolders);
+
+                showSection(resultsSection);
+            }
+
+            // Create tooltip for transaction history
+            function createTooltip() {
+                const tooltip = document.createElement('div');
+                tooltip.id = 'transaction-tooltip';
+                tooltip.className = 'transaction-tooltip hidden';
+                document.body.appendChild(tooltip);
+                return tooltip;
+            }
+
+            // Get tooltip or create if doesn't exist
+            function getTooltip() {
+                let tooltip = document.getElementById('transaction-tooltip');
+                if (!tooltip) {
+                    tooltip = createTooltip();
+                }
+                return tooltip;
+            }
+
+            // Fetch transaction history for an address using parallel fetch
+            async function fetchTransactionHistory(address) {
+                try {
+                    const transactions = await window.PARALLEL_FETCH.makeRequest(
+                        `https://cardano-mainnet.blockfrost.io/api/v0/addresses/${address}/transactions?count=10&order=desc`
+                    );
+                    return transactions || [];
+                } catch (error) {
+                    console.error('Error fetching transaction history:', error);
+                    return [];
+                }
+            }
+
+            // Analyze SpiderLink connections to top 10 wallet holders
+            async function analyzeSpiderLink(address) {
+                try {
+                    // Get current top 10 holders from the spider web
+                    const currentTopHolders = getCurrentTopHolders();
+                    if (!currentTopHolders || currentTopHolders.length === 0) {
+                        return { connections: [], totalConnections: 0, connectionStrength: 'Unknown' };
+                    }
+
+                    // Fetch last 10 transactions for the address
+                    const transactions = await fetchTransactionHistory(address);
+                    if (transactions.length === 0) {
+                        return { connections: [], totalConnections: 0, connectionStrength: 'No Data' };
+                    }
+
+                    const connections = [];
+                    const connectedHolders = new Set();
+
+                    // Create parallel requests for transaction analysis
+                    const txRequests = transactions.slice(0, 10).map(tx => ({
+                        url: `https://cardano-mainnet.blockfrost.io/api/v0/txs/${tx.tx_hash}/utxos`,
+                        options: {}
+                    }));
+
+                    // Execute parallel requests for UTXOs
+                    const utxosResults = await window.PARALLEL_FETCH.makeParallelRequests(txRequests);
+
+                    // Process results to find connections
+                    utxosResults.forEach((utxos, index) => {
+                        if (utxos.error || !utxos.inputs || !utxos.outputs) {
+                            return; // Skip failed requests
+                        }
+
+                        const tx = transactions[index];
+                        const allAddresses = new Set();
+                        
+                        // Add input addresses
+                        if (utxos.inputs) {
+                            utxos.inputs.forEach(input => {
+                                if (input.address && input.address !== address) {
+                                    allAddresses.add(input.address);
+                                }
+                            });
+                        }
+
+                        // Add output addresses
+                        if (utxos.outputs) {
+                            utxos.outputs.forEach(output => {
+                                if (output.address && output.address !== address) {
+                                    allAddresses.add(output.address);
+                                }
+                            });
+                        }
+
+                        // Check if any of these addresses are in top 10 holders
+                        allAddresses.forEach(txAddress => {
+                            // Ignore if the connected address is the same as the address being analyzed
+                            if (txAddress === address) {
+                                return;
+                            }
+                            
+                            const holderMatch = currentTopHolders.find(holder => holder.address === txAddress);
+                            if (holderMatch && !connectedHolders.has(txAddress)) {
+                                connectedHolders.add(txAddress);
+                                connections.push({
+                                    holderAddress: txAddress,
+                                    holderRank: currentTopHolders.indexOf(holderMatch) + 1,
+                                    transactionHash: tx.tx_hash,
+                                    connectionType: 'Direct Transaction'
+                                });
+                            }
+                        });
+
+                        // Limit connections to prevent overwhelming the UI
+                        if (connections.length >= 5) return;
+                    });
+
+                    // Calculate connection strength
+                    const connectionPercentage = (connections.length / Math.min(currentTopHolders.length, 10)) * 100;
+                    let connectionStrength = 'Weak';
+                    if (connectionPercentage >= 50) connectionStrength = 'Very Strong';
+                    else if (connectionPercentage >= 30) connectionStrength = 'Strong';
+                    else if (connectionPercentage >= 15) connectionStrength = 'Moderate';
+                    else if (connectionPercentage > 0) connectionStrength = 'Weak';
+                    else connectionStrength = 'None';
+
+                    return {
+                        connections: connections,
+                        totalConnections: connections.length,
+                        connectionStrength: connectionStrength,
+                        analysisComplete: true
+                    };
+
+                } catch (error) {
+                    console.error('Error analyzing SpiderLink:', error);
+                    return { 
+                        connections: [], 
+                        totalConnections: 0, 
+                        connectionStrength: 'Error',
+                        error: error.message 
+                    };
+                }
+            }
+
+            // Get current top holders from the spider web display
+            function getCurrentTopHolders() {
+                try {
+                    const holderNodes = document.querySelectorAll('.holder-node');
+                    const holders = [];
+                    
+                    holderNodes.forEach(node => {
+                        const address = node.getAttribute('data-address');
+                        if (address) {
+                            holders.push({ address: address });
+                        }
+                    });
+                    
+                    return holders;
+                } catch (error) {
+                    console.error('Error getting current top holders:', error);
+                    return [];
+                }
+            }
+
+            // Create SpiderLink visualization content
+            function createSpiderLinkVisualization(spiderLinkData) {
+                if (!spiderLinkData || spiderLinkData.error) {
+                    return `
+                        <div class="spider-link-error">
+                            <div class="spider-link-icon">⚠️</div>
+                            <div class="spider-link-message">Analysis failed: ${spiderLinkData?.error || 'Unknown error'}</div>
+                        </div>
+                    `;
+                }
+
+                if (spiderLinkData.totalConnections === 0) {
+                    return `
+                        <div class="spider-link-no-connections">
+                            <div class="spider-link-icon">🔍</div>
+                            <div class="spider-link-message">No connections found</div>
+                            <div class="spider-link-subtitle">This address has no recent transactions with top 10 holders</div>
+                        </div>
+                    `;
+                }
+
+                // Create connection visualization
+                const connectionNodes = spiderLinkData.connections.slice(0, 5).map((connection, index) => {
+                    const angle = (index * 72) - 90; // 360/5 = 72 degrees apart
+                    const shortAddress = formatAddress(connection.holderAddress);
+                    const shortTxHash = `${connection.transactionHash.substring(0, 6)}...${connection.transactionHash.substring(connection.transactionHash.length - 6)}`;
+                    
+                    return `
+                        <div class="spider-link-connection" style="transform: rotate(${angle}deg);">
+                            <div class="spider-link-line"></div>
+                            <a href="https://cardanoscan.io/transaction/${connection.transactionHash}" 
+                               target="_blank" 
+                               class="spider-link-node" 
+                               style="transform: rotate(${-angle}deg);"
+                               title="Connected via transaction: ${shortTxHash}">
+                                <div class="connection-rank">#${connection.holderRank}</div>
+                                <div class="connection-address">${shortAddress}</div>
+                                <div class="connection-tx">${shortTxHash}</div>
+                                <div class="connection-external">↗</div>
+                            </a>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="spider-link-center">
+                        <div class="spider-link-center-icon">🔗</div>
+                        <div class="spider-link-center-text">LINK</div>
+                    </div>
+                    <div class="spider-link-connections">
+                        ${connectionNodes}
+                    </div>
+                    <div class="spider-link-info">
+                        <div class="connection-strength ${spiderLinkData.connectionStrength.toLowerCase().replace(' ', '-')}">
+                            ${spiderLinkData.connectionStrength}
+                        </div>
+                        <div class="connection-count">${spiderLinkData.totalConnections}/10 Connected</div>
+                    </div>
+                    <div class="spider-link-rings">
+                        <div class="spider-link-ring ring-1"></div>
+                        <div class="spider-link-ring ring-2"></div>
+                    </div>
+                `;
+            }
+
+            // Show tooltip with spider web of transaction links
+            async function showTransactionTooltip(event, address) {
+                const tooltip = getTooltip();
+                
+                // Show loading state
+                tooltip.innerHTML = `
+                    <button class="tooltip-close-btn" onclick="hideTransactionTooltip()">&times;</button>
+                    <div class="spider-web-tooltip">
+                        <div class="web-tooltip-header">
+                            <strong>Transaction Web</strong>
+                            <div class="web-tooltip-address">${formatAddress(address)}</div>
+                        </div>
+                        <div class="web-tooltip-container">
+                            <div class="web-tooltip-loading">Weaving transaction web...</div>
+                        </div>
+                        <div class="spider-link-tooltip">
+                            <div class="spider-link-header">
+                                <strong>SpiderLink</strong>
+                                <div class="spider-link-address">${formatAddress(address)}</div>
+                            </div>
+                            <div class="spider-link-container">
+                                <div class="spider-link-loading">Analyzing connections...</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Position tooltip
+                const rect = event.target.getBoundingClientRect();
+                tooltip.style.left = `${rect.left + window.scrollX}px`;
+                tooltip.style.top = `${rect.bottom + window.scrollY + 10}px`;
+                
+                // Show tooltip
+                tooltip.classList.remove('hidden');
+                
+                // Fetch transactions and analyze connections
+                const [transactions, spiderLinkData] = await Promise.all([
+                    fetchTransactionHistory(address),
+                    analyzeSpiderLink(address)
+                ]);
+                
+                if (transactions.length === 0) {
+                    tooltip.innerHTML = `
+                        <div class="spider-web-tooltip">
+                            <div class="web-tooltip-header">
+                                <strong>Transaction Web</strong>
+                                <div class="web-tooltip-address">${formatAddress(address)}</div>
+                            </div>
+                            <div class="web-tooltip-container">
+                                <div class="web-tooltip-error">No transactions found to weave web</div>
+                            </div>
+                            <div class="spider-link-tooltip">
+                                <div class="spider-link-header">
+                                    <strong>SpiderLink</strong>
+                                    <div class="spider-link-address">${formatAddress(address)}</div>
+                                </div>
+                                <div class="spider-link-container">
+                                    <div class="spider-link-error">No transaction data available</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Create spider web with transaction links
+                const webStrings = transactions.slice(0, 10).map((tx, index) => {
+                    const angle = (index * 36) - 90; // 360/10 = 36 degrees apart, start from top
+                    const shortTxHash = `${tx.tx_hash.substring(0, 6)}...${tx.tx_hash.substring(tx.tx_hash.length - 6)}`;
+                    
+                    return `
+                        <div class="web-tooltip-string" style="transform: rotate(${angle}deg);">
+                            <div class="web-tooltip-line"></div>
+                            <a href="https://cardanoscan.io/transaction/${tx.tx_hash}" 
+                               target="_blank" 
+                               class="web-tooltip-node" 
+                               style="transform: rotate(${-angle}deg);"
+                               title="Transaction ${index + 1}: ${shortTxHash}">
+                                <div class="web-node-number">${index + 1}</div>
+                                <div class="web-node-hash">${shortTxHash}</div>
+                                <div class="web-node-external">↗</div>
+                            </a>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Create SpiderLink visualization
+                const spiderLinkContent = createSpiderLinkVisualization(spiderLinkData);
+                
+                // Update tooltip with both spider web and spider link
+                tooltip.innerHTML = `
+                    <button class="tooltip-close-btn" onclick="hideTransactionTooltip()">&times;</button>
+                    <div class="tooltip-container">
+                        <div class="spider-web-tooltip">
+                            <div class="web-tooltip-header">
+                                <strong>Transaction Web</strong>
+                                <div class="web-tooltip-address">${formatAddress(address)}</div>
+                            </div>
+                            <div class="web-tooltip-container">
+                                <div class="web-tooltip-center">
+                                    <div class="web-center-icon">🕷️</div>
+                                    <div class="web-center-text">TX</div>
+                                </div>
+                                <div class="web-tooltip-strings">
+                                    ${webStrings}
+                                </div>
+                                <div class="web-tooltip-rings">
+                                    <div class="web-ring ring-1"></div>
+                                    <div class="web-ring ring-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="spider-link-tooltip">
+                            <div class="spider-link-header">
+                                <strong>SpiderLink</strong>
+                                <div class="spider-link-address">${formatAddress(address)}</div>
+                            </div>
+                            <div class="spider-link-container">
+                                ${spiderLinkContent}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Hide tooltip
+            function hideTransactionTooltip() {
+                const tooltip = getTooltip();
+                tooltip.classList.add('hidden');
+            }
+
+            // Make hideTransactionTooltip globally accessible
+            window.hideTransactionTooltip = hideTransactionTooltip;
+
+            // Create spider web visualization
+            function createSpiderWeb(assetDetail, topHolders) {
+                const webCenter = document.querySelector('.policy-id-display');
+                const webStrings = document.getElementById('web-strings');
+                
+                // Display policy ID in center
+                const shortPolicyId = `${assetDetail.policy_id.substring(0, 8)}...${assetDetail.policy_id.substring(48)}`;
+                webCenter.innerHTML = `
+                    <div class="center-content">
+                        <div class="policy-label">Policy ID</div>
+                        <div class="policy-value">${shortPolicyId}</div>
+                    </div>
+                `;
+
+                // Clear previous web strings
+                webStrings.innerHTML = '';
+
+                // Create 10 web strings for top holders
+                topHolders.forEach((holder, index) => {
+                    const angle = (index * 36) - 90; // 360/10 = 36 degrees apart, start from top
+                    
+                    // Calculate percentage with error handling
+                    let percentage = 'N/A';
+                    if (assetDetail.quantity && !isNaN(parseInt(assetDetail.quantity)) && parseInt(assetDetail.quantity) > 0) {
+                        percentage = ((parseInt(holder.quantity) / parseInt(assetDetail.quantity)) * 100).toFixed(2);
+                    }
+                    
+                    const webString = document.createElement('div');
+                    webString.className = 'web-string';
+                    webString.style.transform = `rotate(${angle}deg)`;
+                    
+                    const isSnekFunBonding = isSnekFunBondingCurve(holder.address);
+                    const isSnekFunVesting = isSnekFunVestingWallet(holder.address);
+                    const isSnekFun = isSnekFunBonding || isSnekFunVesting;
+                    
+                    let nodeClass = 'holder-node';
+                    let addressClass = 'holder-address';
+                    
+                    if (isSnekFunBonding) {
+                        nodeClass = 'holder-node snek-fun-node';
+                        addressClass = 'holder-address snek-fun';
+                    } else if (isSnekFunVesting) {
+                        nodeClass = 'holder-node snek-vesting-node';
+                        addressClass = 'holder-address snek-vesting';
+                    }
+                    
+                    webString.innerHTML = `
+                        <div class="web-line"></div>
+                        <div class="${nodeClass}" style="transform: rotate(${-angle}deg);" data-address="${holder.address}">
+                            <div class="holder-rank">#${index + 1}</div>
+                            <div class="holder-details">
+                                <div class="${addressClass} hoverable-address" data-full-address="${holder.address}">${formatAddress(holder.address)}</div>
+                                <div class="holder-amount">${formatTokenAmount(holder.quantity)}</div>
+                                <div class="holder-percentage">${percentage === 'N/A' ? percentage : percentage + '%'}</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    webStrings.appendChild(webString);
+                });
+
+                // Add event listeners for tooltip functionality
+                addTooltipEventListeners();
+
+                // Add connecting web lines between nodes
+                createWebConnections(topHolders.length);
+            }
+
+            // Add event listeners for tooltip functionality
+            function addTooltipEventListeners() {
+                const hoverableAddresses = document.querySelectorAll('.hoverable-address');
+                
+                hoverableAddresses.forEach(addressElement => {
+                    let hoverTimeout;
+                    
+                    addressElement.addEventListener('mouseenter', (event) => {
+                        // Clear any existing timeout
+                        clearTimeout(hoverTimeout);
+                        
+                        // Add slight delay to prevent tooltip spam
+                        hoverTimeout = setTimeout(() => {
+                            const fullAddress = event.target.getAttribute('data-full-address');
+                            showTransactionTooltip(event, fullAddress);
+                        }, 300);
+                    });
+                    
+                    addressElement.addEventListener('mouseleave', () => {
+                        // Clear timeout if mouse leaves before delay
+                        clearTimeout(hoverTimeout);
+                        
+                        // Hide tooltip after a short delay to allow moving to tooltip
+                        setTimeout(() => {
+                            const tooltip = getTooltip();
+                            if (!tooltip.matches(':hover') && !addressElement.matches(':hover')) {
+                                hideTransactionTooltip();
+                            }
+                        }, 200);
+                    });
+                });
+
+                // Keep tooltip visible when hovering over it
+                document.addEventListener('mouseover', (event) => {
+                    if (event.target.closest('#transaction-tooltip')) {
+                        // Mouse is over tooltip, keep it visible
+                        return;
+                    }
+                });
+
+                // Hide tooltip when clicking outside
+                document.addEventListener('click', (event) => {
+                    if (!event.target.closest('.hoverable-address') && !event.target.closest('#transaction-tooltip')) {
+                        hideTransactionTooltip();
+                    }
+                });
+            }
+
+            // Create connecting lines between web nodes
+            function createWebConnections(nodeCount) {
+                const webContainer = document.getElementById('spider-web-container');
+                
+                // Create circular connection lines
+                for (let ring = 1; ring <= 3; ring++) {
+                    const connectionRing = document.createElement('div');
+                    connectionRing.className = `connection-ring ring-${ring}`;
+                    webContainer.appendChild(connectionRing);
+                }
+            }
+
+            // Event listeners
+            analyzeBtn.addEventListener('click', analyzeToken);
+            retryBtn.addEventListener('click', () => {
+                showSection(loadingSection);
+                setTimeout(analyzeToken, 500);
+            });
+
+            backToDashboardBtn.addEventListener('click', () => {
+                window.location.href = 'dashboard.html';
+            });
+
+            // Allow Enter key to trigger analysis
+            policyIdInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    analyzeToken();
+                }
+            });
+
+            // Real-time validation
+            policyIdInput.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (value.length > 0 && !isValidInput(value)) {
+                    e.target.style.borderColor = '#ff4444';
+                } else {
+                    e.target.style.borderColor = '';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
